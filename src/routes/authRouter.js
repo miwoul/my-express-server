@@ -41,7 +41,7 @@ router.post('/join', async (req, res) => {
       return res.status(409).json({ message: 'User already exists' });
     }
     const newUser = new User({ username, age, password})
-    await newUser.save();
+    const savedUser = await newUser.save();
 
     if (!savedUser) {
       throw new Error('User save operation failed');
@@ -56,11 +56,11 @@ router.put('/change-password', async (req, res) => {
   const { oldPassword, newPassword } = req.body;
   try {
     const user = await User.findOne({ username : req.user.username })
-    if (!user || oldPassword != user.password) {
+    if (!user || (oldPassword != user.password)) {
       return res.status(401).json({ message: 'Authentication failed' });
     }
     user.password = newPassword;
-    const savedUser = await newUser.save();
+    const savedUser = await user.save();
     if (!savedUser) {
       throw new Error('User save operation failed');
     }
@@ -70,14 +70,26 @@ router.put('/change-password', async (req, res) => {
   }
 });
 
-router.delete('/delete-account', (req, res) => {
-  const index = users.findIndex(user => user.id === req.session.passport.user);
-  if (index === -1) {
-    return res.status(404).json({ message: 'Account not found' });
+router.delete('/delete-account', async (req, res) => {
+  try {
+    const user = await User.findOne({ username : req.user.username })
+    if (!user) {
+      return res.status(401).json({ message: 'Authentication failed' });
+    }
+    await User.deleteOne({username : req.user.username})
+    // req.logOut();
+    res.status(200).json({ message: 'User Deleted successfully' });
+  } catch(err) {
+    res.status(500).send('Internal server error');
   }
-  users.splice(index, 1);
-  req.logout();
-  res.status(200).json({ message: 'Account deleted successfully' });
+
+  // const index = users.findIndex(user => user.id === req.session.passport.user);
+  // if (index === -1) {
+  //   return res.status(404).json({ message: 'Account not found' });
+  // }
+  // users.splice(index, 1);
+  // req.logout();
+  // res.status(200).json({ message: 'Account deleted successfully' });
 });
 
 export default router;
