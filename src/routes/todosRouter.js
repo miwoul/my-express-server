@@ -5,14 +5,14 @@ const router = express.Router();
 
 //로그인한 유저의 todolist CRUD 구현
 //로그인 하지 않은 경우 접근 불가
-router.use((req, res, next) => {
-    if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "로그인이 필요합니다." });
-    }
-    next();
-});
+// router.use((req, res, next) => {
+//     if (!req.isAuthenticated()) {
+//         return res.status(401).json({ message: "로그인이 필요합니다." });
+//     }
+//     next();
+// });
 
-router.get('/', async (req, res) => {
+router.get('/', passport.authenticate('jwt',  {session:false}), async (req, res) => {
     try {
         const todos = await Todo.find({ userId: req.user._id });
         res.status(200).json(todos);
